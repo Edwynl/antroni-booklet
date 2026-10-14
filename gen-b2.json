@@ -1,0 +1,40 @@
+{
+  "requests": [
+    {
+      "output_file": "19-poolside.png",
+      "aspect_ratio": "16:9",
+      "resolution": "4K",
+      "prompt": "Luxury architectural photography of a poolside terrace with a fully retracted panoramic sliding wall, frameless opening to a still reflecting pool and clipped lawn, pale stone deck, minimal furniture in warm neutrals, bright midday light with crisp architectural shadows. Airy high-key palette of bone, pale greige and soft bronze. High-end architectural catalogue, medium format, ultra detailed. No text, no watermark, no lettering."
+    },
+    {
+      "output_file": "20-facade-grid.png",
+      "aspect_ratio": "16:9",
+      "resolution": "4K",
+      "prompt": "Luxury architectural photography of a residential curtain wall facade grid, slim dark bronze mullions and transoms forming a precise rectangular rhythm, reflective glazing showing sky and clouds, crisp joint lines. Bright even daylight, pale sky reflected in glass, restrained bronze and grey palette, strictly geometric and minimal. High-end architectural catalogue, medium format, ultra detailed. No text, no watermark, no lettering."
+    },
+    {
+      "output_file": "21-facade-water.png",
+      "aspect_ratio": "16:9",
+      "resolution": "4K",
+      "prompt": "Luxury architectural photography of a bronze and glass building facade reflected in a perfectly still black reflecting pool, symmetrical composition, clean horizontal bands of glazing, bright clear sky. Airy high-key lighting, pale sky, restrained bronze and cool grey palette, minimal and serene. High-end architectural catalogue, medium format, ultra detailed. No text, no watermark, no lettering."
+    },
+    {
+      "output_file": "22-facade-corner.png",
+      "aspect_ratio": "3:4",
+      "resolution": "4K",
+      "prompt": "Architectural detail photography looking up at a facade corner where two planes of bronze mullioned glazing meet, crisp mitred joints, pale stone soffit above, strong geometric perspective. Bright daylight, pale sky, restrained bronze and bone palette, extremely clean and minimal. High-end architectural catalogue detail, medium format, ultra detailed. No text, no watermark, no lettering."
+    },
+    {
+      "output_file": "23-panel-install.png",
+      "aspect_ratio": "16:9",
+      "resolution": "4K",
+      "prompt": "Luxury architectural photography of a unitised curtain wall panel being installed by a lifting frame on a clean building site, large bronze-framed glass panel suspended against a pale sky, steel bracket visible. Bright clear daylight, restrained bone grey and bronze palette, crisp industrial precision, minimal. High-end architectural catalogue, medium format, ultra detailed. No text, no watermark, no lettering."
+    },
+    {
+      "output_file": "24-stone-glass-junction.png",
+      "aspect_ratio": "3:4",
+      "resolution": "4K",
+      "prompt": "Macro architectural detail photography of the junction where a pale limestone facade meets bronze mullioned glazing, crisp shadow reveal, fine stone texture against a precision metal frame, a sliver of reflective glass. Bright soft daylight, bone limestone and warm bronze palette, minimal composition with generous negative space. High-end technical catalogue detail, medium format, shallow depth of field, ultra detailed. No text, no watermark, no lettering."
+    }
+  ]
+}
