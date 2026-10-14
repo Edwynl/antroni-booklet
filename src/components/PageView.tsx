@@ -31,7 +31,6 @@ export default function PageView({ spec, folio, total, theme }: Props) {
   // Bleed and band pages run full-bleed photography — they already carry the
   // folio as a corner micro-label, and a foot there would cross the image.
   const hasFoot = spec.kind === 'feature'
-  const footInPanel = spec.kind === 'full' && spec.variant === 'split'
 
   return (
     <div className={`sheet sheet--${theme} sheet-${spec.kind}${variant}${hasFoot ? ' sheet--hasfoot' : ''}`}>
