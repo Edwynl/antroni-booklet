@@ -82,7 +82,7 @@ export const BRAND_CHAPTERS: BrandChapter[] = [
     id: 'thinking',
     label: 'Principles',
     kicker: 'LA DÉMARCHE',
-    title: 'Why The Window Looks Like This',
+    title: 'The Room Begins At The Glass',
     lede: 'Five decisions about proportion, movement and restraint, taken before a single profile was drawn.',
     principles: [
       {
