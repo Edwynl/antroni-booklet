@@ -30,6 +30,14 @@ Below 820px every catalogue degrades to 3:4 and single-page mode.
 2. **Identity** — six logo directions, as real SVG
 3. **Interface** — four phone screens as live DOM, including a working proportion tool
 4. **Catalogues** — the three flip books
+5. **Editions** — the printed booklets, newest volume first, with a lightbox
+
+## Editions
+
+The printed editions are a separate asset set, rebuilt from their source folders by
+`build-editions.mjs` (80MB of PNG → 6.4MB of webp) into
+`public/images/editions/<folder>/`. Folders are read in reverse order, 5 → 1, which is the
+order the section renders. `src/data/editions.ts` is generated — edit the script, not the data.
 
 ## How the page turn works
 
@@ -55,6 +63,7 @@ Run the dev server first, then:
 node verify2.mjs          # chapters, book switching, forward/reverse turn, wrap-around
 node check-layouts.mjs    # asserts no layout variant repeats inside a book
 node check-overflow.mjs   # 4 viewports x 3 books x every page: spill, clip, foot collision
+node check-editions.mjs   # Editions grid, plate count, aspect fidelity, lightbox, nav reachability
 node shoot.mjs            # flat-frame screenshots into shots3/
 ```
 

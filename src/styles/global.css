@@ -398,6 +398,28 @@ img {
   }
 }
 
+/* A fifth chapter no longer fits beside the wordmark on a phone — without
+   this the last nav item renders outside the viewport and cannot be tapped. */
+@media (max-width: 620px) {
+  .chrome {
+    gap: 10px;
+    padding: 14px 12px;
+  }
+  .wordmark__cn {
+    display: none;
+  }
+  .chapnav {
+    gap: 2px;
+  }
+  .chapnav__i {
+    padding: 6px 1px;
+  }
+  .chapnav__i span {
+    font-size: 8px;
+    letter-spacing: 0.1em;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .stage__grain,
   .hint {

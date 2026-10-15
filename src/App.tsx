@@ -4,16 +4,18 @@ import ClosedCover from './components/ClosedCover'
 import BrandSection from './components/BrandSection'
 import LogoSection from './components/LogoSection'
 import MobileSection from './components/MobileSection'
+import EditionsSection from './components/EditionsSection'
 import { BOOKLETS } from './data/booklet'
 import './styles/sections.css'
 
-type Chapter = 'brand' | 'logo' | 'mobile' | 'catalogues'
+type Chapter = 'brand' | 'logo' | 'mobile' | 'catalogues' | 'editions'
 
 const CHAPTERS: { id: Chapter; label: string; cn: string }[] = [
   { id: 'brand', label: 'Principles', cn: '理念' },
   { id: 'logo', label: 'Identity', cn: '标志' },
   { id: 'mobile', label: 'Interface', cn: '界面' },
   { id: 'catalogues', label: 'Catalogues', cn: '图录' },
+  { id: 'editions', label: 'Editions', cn: '成品' },
 ]
 
 function measure(ratio: number): Layout {
@@ -295,6 +297,7 @@ export default function App() {
             {chapter === 'brand' && <BrandSection />}
             {chapter === 'logo' && <LogoSection />}
             {chapter === 'mobile' && <MobileSection />}
+            {chapter === 'editions' && <EditionsSection />}
           </div>
         )}
       </div>
