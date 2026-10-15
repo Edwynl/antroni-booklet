@@ -2,9 +2,16 @@ import { mkdir, readdir, rm, stat, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import sharp from 'sharp'
 
-/* Copies the numbered ANTRONI plate folders out of Downloads into public/ as
-   webp, and emits src/data/editions.ts describing them in reverse folder order
-   (5 -> 1), which is the order the section renders. */
+/* Every plate set in Downloads/ANTRONI, converted to webp and described in
+   src/data/editions.ts.
+
+   Two kinds of material, laid out differently:
+     directions — five single spreads, one per aesthetic direction, each
+                  already carries its own title
+     sets       — plate sets grouped by folder, each group sharing one ratio
+
+   One layout per group, never twice in a row, so the section never reads as
+   the same template repeated. */
 
 const SRC = 'C:/Users/edwyn/Downloads/ANTRONI'
 const OUT = 'public/images/editions'
@@ -13,76 +20,132 @@ const DATA = 'src/data/editions.ts'
 const MAX = 2000
 const QUALITY = 82
 
-/* folder 5 files carry real names; the rest are numbered captures */
 const TITLES = {
   'Architectural Windows and Doors Catalogue': 'Architectural Windows & Doors Catalogue',
   'Antroni Windows_ A Brighter Tomorrow': 'A Brighter Tomorrow',
   'Antorni Windows & Doors Editorial Grid': 'Editorial Grid',
   'Antroni Luxury Architecture Brochure Grid': 'Brochure Grid',
   'Antroni Windows & Doors Editorial Moodboard': 'Editorial Moodboard',
+  'Antroni Windows & Doors Lookbook': 'Lookbook',
+  'ANTRONI_ A Brighter Way of Living': 'A Brighter Way of Living',
+  'Antroni_ A Brighter Way to Live': 'A Brighter Way to Live',
+  'Framing A Brighter Tomorrow': 'Framing A Brighter Tomorrow',
+  'The Art of Openings_ Luxury Architecture Editorial': 'The Art of Openings',
 }
 
-const groups = []
+/* folder -> [label, layout]. Adjacent groups never share a layout. */
+const SETS = [
+  ['Design3', 'Design 3', 'grid'],
+  ['Design2', 'Design 2', 'column'],
+  ['Design1', 'Design 1', 'strip'],
+  ['5', 'Edition 5', 'duo'],
+  ['4', 'Edition 4', 'stagger'],
+  ['3', 'Edition 3', 'grid'],
+  ['2', 'Edition 2', 'duo'],
+  ['1', 'Edition 1', 'column'],
+]
 
-// start clean so a renamed plate never leaves an orphan behind
+const slugify = (s) =>
+  s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+
+const groups = []
+let before = 0
+let after = 0
+
 await rm(OUT, { recursive: true, force: true })
 
-for (const n of ['5', '4', '3', '2', '1']) {
-  const dir = join(SRC, n)
-  const files = (await readdir(dir))
+/* ---------- directions: the five loose boards at the root ---------- */
+{
+  const files = (await readdir(SRC))
     .filter((f) => /\.(png|jpe?g|webp)$/i.test(f))
     .sort((a, b) => a.localeCompare(b, 'en', { numeric: true }))
 
-  await mkdir(join(OUT, n), { recursive: true })
-
   const items = []
-  let before = 0
-  let after = 0
-
-  for (const [i, f] of files.entries()) {
-    const src = join(dir, f)
+  for (const f of files) {
+    const src = join(SRC, f)
     const meta = await sharp(src).metadata()
-    // use the trailing -N of a numbered capture, else the positional index
-    const m = f.match(/-(\d+)\.(png|jpe?g|webp)$/i)
-    const seq = m ? Number(m[1]) : i + 1
-    // look up the descriptive name on the stem with the -N suffix removed
-    const stem = f.replace(/\.(png|jpe?g|webp)$/i, '').replace(/-\d+$/, '')
-    const slug = TITLES[stem]
-      ? TITLES[stem].toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
-      : String(seq).padStart(2, '0')
+    // "01.Architectural Minimalism — 建筑极简" -> n, en, cn
+    const m = f.replace(/\.(png|jpe?g|webp)$/i, '').match(/^(\d+)[.·\s-]+(.+?)(?:\s*[—–-]\s*(.+))?$/)
+    const en = (m ? m[2] : f).trim()
+    const cn = m && m[3] ? m[3].trim() : ''
 
-    const out = join(OUT, n, `${slug}.webp`)
+    await mkdir(join(OUT, '0'), { recursive: true })
+    const slug = slugify(en)
+    const out = join(OUT, '0', `${slug}.webp`)
     before += (await stat(src)).size
-
     await sharp(src)
       .rotate()
       .resize({ width: MAX, height: MAX, fit: 'inside', withoutEnlargement: true })
       .webp({ quality: QUALITY, effort: 6 })
       .toFile(out)
-
-    const kb = (await stat(out)).size / 1024
     after += (await stat(out)).size
 
     items.push({
-      src: `/images/editions/${n}/${slug}.webp`,
-      title: TITLES[stem] ?? String(seq).padStart(2, '0'),
+      src: `/images/editions/0/${slug}.webp`,
+      title: en,
+      cn,
       w: meta.width,
       h: meta.height,
-      kb: Math.round(kb),
+      kb: Math.round((await stat(out)).size / 1024),
     })
-    console.log(`[${n}] ${f.slice(0, 46).padEnd(46)} -> ${slug}.webp  ${kb.toFixed(0).padStart(4)} KB`)
+    console.log(`[directions] ${f.slice(0, 40).padEnd(40)} -> ${slug}.webp`)
   }
 
-  groups.push({ folder: n, items })
-  console.log(`  --- [${n}] ${items.length} images  ${(before / 1048576).toFixed(1)} MB -> ${(after / 1048576).toFixed(2)} MB\n`)
+  groups.push({ folder: '0', label: 'Directions', cn: '设计方向', layout: 'hero', items })
+  console.log(`  --- directions ${items.length} boards\n`)
+}
+
+/* ---------- plate sets ---------- */
+for (const [dir, label, layout] of SETS) {
+  const path = join(SRC, dir)
+  const files = (await readdir(path))
+    .filter((f) => /\.(png|jpe?g|webp)$/i.test(f))
+    .sort((a, b) => a.localeCompare(b, 'en', { numeric: true }))
+
+  await mkdir(join(OUT, dir), { recursive: true })
+
+  const items = []
+  for (const [i, f] of files.entries()) {
+    const src = join(path, f)
+    const meta = await sharp(src).metadata()
+    const m = f.match(/-(\d+)\.(png|jpe?g|webp)$/i)
+    const seq = m ? Number(m[1]) : i + 1
+    const stem = f.replace(/\.(png|jpe?g|webp)$/i, '').replace(/-\d+$/, '')
+    const named = TITLES[stem]
+    const slug = named ? slugify(named) : String(seq).padStart(2, '0')
+
+    const out = join(OUT, dir, `${slug}.webp`)
+    before += (await stat(src)).size
+    await sharp(src)
+      .rotate()
+      .resize({ width: MAX, height: MAX, fit: 'inside', withoutEnlargement: true })
+      .webp({ quality: QUALITY, effort: 6 })
+      .toFile(out)
+    after += (await stat(out)).size
+
+    items.push({
+      src: `/images/editions/${dir}/${slug}.webp`,
+      title: named ?? String(seq).padStart(2, '0'),
+      cn: '',
+      w: meta.width,
+      h: meta.height,
+      kb: Math.round((await stat(out)).size / 1024),
+    })
+    console.log(`[${dir}] ${f.slice(0, 40).padEnd(40)} -> ${slug}.webp`)
+  }
+
+  groups.push({ folder: dir, label, cn: '', layout, items })
+  const sum = items.reduce((n, x) => n + x.kb, 0)
+  console.log(`  --- ${label}: ${items.length} plates, ${(sum / 1024).toFixed(2)} MB, layout ${layout}\n`)
 }
 
 const body = `/* Generated by build-editions.mjs — do not edit by hand.
-   Source: ${SRC}, folders listed in reverse order. */
+   Source: ${SRC} */
 
 export type EditionImage = {
   src: string
   title: string
+  cn: string
   w: number
   h: number
   kb: number
@@ -90,6 +153,9 @@ export type EditionImage = {
 
 export type EditionGroup = {
   folder: string
+  label: string
+  cn: string
+  layout: 'hero' | 'grid' | 'column' | 'strip' | 'duo' | 'stagger'
   items: EditionImage[]
 }
 
@@ -99,6 +165,7 @@ export const EDITIONS: EditionGroup[] = ${JSON.stringify(groups, null, 2)}
 await writeFile(DATA, body, 'utf8')
 
 const total = groups.reduce((n, g) => n + g.items.length, 0)
-const totalKb = groups.reduce((n, g) => n + g.items.reduce((m, i) => m + i.kb, 0), 0)
 console.log(`wrote ${DATA}`)
-console.log(`${total} images across ${groups.length} folders, ${(totalKb / 1024).toFixed(2)} MB total`)
+console.log(
+  `${total} images in ${groups.length} groups — ${(before / 1048576).toFixed(1)} MB -> ${(after / 1048576).toFixed(2)} MB`,
+)

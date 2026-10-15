@@ -1088,9 +1088,15 @@
 
 .ed__n {
   font-family: var(--font-display);
-  font-size: clamp(26px, 3.2vw, 42px);
-  line-height: 1;
+  font-size: clamp(22px, 2.6vw, 34px);
+  line-height: 1.1;
   color: var(--accent);
+}
+
+.ed__cn {
+  font-size: 12px;
+  letter-spacing: 0.28em;
+  color: var(--muted);
 }
 
 .ed__label {
@@ -1107,13 +1113,108 @@
   gap: clamp(12px, 1.4vw, 22px);
 }
 
+/* ---------- six layouts, never twice running ---------- */
+
+/* Directions — one full-width spread per row, named underneath */
+.ed--hero .ed__grid {
+  grid-template-columns: minmax(0, 1fr);
+  gap: clamp(28px, 4vw, 52px);
+}
+.ed--hero .ed__cell {
+  border: none;
+  /* left full-bleed the plate is taller than the viewport at desktop */
+  width: 100%;
+  max-width: 860px;
+  margin: 0 auto;
+}
+.ed--hero .ed__cell img {
+  border: 1px solid var(--line);
+}
+.ed--hero .ed__cap {
+  position: static;
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  padding: 14px 2px 0;
+  background: none;
+  opacity: 1;
+}
+.ed--hero .ed__cap b {
+  font-family: var(--font-display);
+  font-size: clamp(19px, 2.1vw, 30px);
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+  text-transform: none;
+}
+.ed--hero .ed__cap i {
+  font-style: normal;
+  font-size: 12px;
+  letter-spacing: 0.28em;
+  color: var(--muted);
+}
+
+/* Plate sets — three across */
+.ed--grid .ed__grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+/* Portrait sets — one centred column, large */
+.ed--column .ed__grid {
+  grid-template-columns: minmax(0, 1fr);
+  gap: clamp(20px, 2.6vw, 38px);
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+/* Landscape sets — a horizontal filmstrip */
+.ed--strip .ed__grid {
+  display: flex;
+  gap: clamp(10px, 1.2vw, 18px);
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  padding-bottom: 12px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(203, 162, 92, 0.4) transparent;
+}
+.ed--strip .ed__grid::-webkit-scrollbar {
+  height: 5px;
+}
+.ed--strip .ed__grid::-webkit-scrollbar-thumb {
+  background: rgba(203, 162, 92, 0.35);
+}
+.ed--strip .ed__cell {
+  flex: 0 0 auto;
+  width: clamp(280px, 34vw, 460px);
+  scroll-snap-align: start;
+}
+
+/* Two large plates across */
+.ed--duo .ed__grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(14px, 1.8vw, 28px);
+}
+
+/* Two across, alternating columns dropped for a staggered rhythm */
+.ed--stagger .ed__grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(14px, 1.8vw, 28px);
+}
+.ed--stagger .ed__cell:nth-child(even) {
+  transform: translateY(clamp(16px, 3vw, 46px));
+}
+
 .ed__cell {
   position: relative;
   display: block;
   overflow: hidden;
   background: var(--card);
   border: 1px solid var(--line);
-  transition: border-color 0.4s ease;
+  transition: border-color 0.4s ease, transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.ed--stagger .ed__cell:hover {
+  transform: translateY(clamp(16px, 3vw, 46px));
 }
 
 .ed__cell:hover,
@@ -1129,21 +1230,63 @@
 }
 
 .ed__cell:hover img {
-  transform: scale(1.028);
+  transform: scale(1.035);
+}
+
+/* an expand glyph so the plate reads as clickable before you click it */
+.ed__zoom {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  color: #fff;
+  background: rgba(18, 14, 11, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  opacity: 0;
+  transform: scale(0.86);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+.ed__zoom svg {
+  width: 15px;
+  height: 15px;
+}
+.ed__cell:hover .ed__zoom,
+.ed__cell:focus-visible .ed__zoom {
+  opacity: 1;
+  transform: scale(1);
 }
 
 .ed__cap {
   position: absolute;
   left: 0;
+  right: 0;
   bottom: 0;
-  padding: 22px 14px 10px;
-  font-size: 10px;
-  letter-spacing: 0.26em;
-  text-transform: uppercase;
-  color: rgba(241, 230, 209, 0.82);
-  background: linear-gradient(to top, rgba(20, 15, 11, 0.78), transparent);
+  padding: 26px 14px 10px;
+  background: linear-gradient(to top, rgba(20, 15, 11, 0.82), transparent);
   opacity: 0;
   transition: opacity 0.35s ease;
+}
+
+.ed__cap b {
+  display: block;
+  font-size: 10px;
+  font-weight: 400;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: rgba(241, 230, 209, 0.9);
+}
+
+.ed__cap i {
+  display: block;
+  margin-top: 5px;
+  font-style: normal;
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  color: rgba(241, 230, 209, 0.62);
 }
 
 .ed__cell:hover .ed__cap {
@@ -1175,17 +1318,61 @@
   flex-direction: column;
   align-items: center;
   gap: 14px;
-  max-height: 86vh;
+  min-height: 0;
+  max-height: 92vh;
   min-width: 0;
 }
 
 .lightbox__fig img {
-  max-height: 78vh;
+  max-height: 66vh;
   max-width: 100%;
   width: auto;
   height: auto;
   object-fit: contain;
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6);
+  animation: plateIn 0.34s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes plateIn {
+  from {
+    opacity: 0;
+    transform: scale(0.965) translateY(6px);
+  }
+}
+
+/* the rest of this group, one click away */
+.lightbox__strip {
+  display: flex;
+  gap: 8px;
+  width: min(92vw, 860px);
+  padding: 4px 2px 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.lightbox__strip::-webkit-scrollbar {
+  display: none;
+}
+
+.lightbox__thumb {
+  flex: 0 0 auto;
+  width: 62px;
+  overflow: hidden;
+  opacity: 0.42;
+  outline: 1px solid transparent;
+  transition: opacity 0.25s ease, outline-color 0.25s ease, transform 0.25s ease;
+}
+.lightbox__thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.lightbox__thumb:hover {
+  opacity: 0.78;
+}
+.lightbox__thumb.is-on {
+  opacity: 1;
+  outline-color: var(--accent);
+  transform: translateY(-2px);
 }
 
 .lightbox__cap {
@@ -1201,6 +1388,10 @@
 .lightbox__cap b {
   font-weight: 400;
   color: var(--ink);
+}
+
+.lightbox__cap em {
+  font-style: normal;
 }
 
 .lightbox__cap i {
@@ -1236,9 +1427,19 @@
   height: 22px;
 }
 
+/* Each layout steps down on its own — a generic `.ed__grid` override cannot
+   reach them, because `.ed--x .ed__grid` outranks it at any width. */
 @media (max-width: 900px) {
-  .ed__grid {
+  .ed--grid .ed__grid,
+  .ed--duo .ed__grid,
+  .ed--stagger .ed__grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .ed--strip .ed__cell {
+    width: clamp(240px, 52vw, 360px);
+  }
+  .ed--stagger .ed__cell:nth-child(even) {
+    transform: translateY(clamp(10px, 2vw, 24px));
   }
   .lightbox {
     grid-template-columns: 44px minmax(0, 1fr) 44px;
@@ -1246,8 +1447,28 @@
 }
 
 @media (max-width: 560px) {
-  .ed__grid {
+  .ed--grid .ed__grid,
+  .ed--duo .ed__grid,
+  .ed--stagger .ed__grid {
     grid-template-columns: minmax(0, 1fr);
+  }
+  /* on one column the stagger reads as a gap, so drop the offset entirely */
+  .ed--stagger .ed__cell:nth-child(even),
+  .ed--stagger .ed__cell:hover {
+    transform: none;
+  }
+  .ed--hero .ed__cap {
+    flex-direction: column;
+    gap: 4px;
+  }
+  .lightbox__fig img {
+    max-height: 58vh;
+  }
+  .lightbox__strip {
+    width: 94vw;
+  }
+  .lightbox__thumb {
+    width: 48px;
   }
 }
 

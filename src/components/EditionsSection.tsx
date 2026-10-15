@@ -1,24 +1,28 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { EDITIONS } from '../data/editions'
 
-/* The printed editions, newest folder first (5 -> 1). Every group shares one
-   aspect ratio, so each grid cell can reserve the real box and nothing shifts
-   as the lazy images arrive. Clicking a plate opens it full size. */
+/* Every plate set gets its own layout — hero, grid, column, strip, duo and
+   stagger never repeat back to back, so the section reads as a sequence of
+   different spreads rather than one template applied nine times.
+
+   Clicking any plate opens it full size with the rest of its own group
+   available as a filmstrip underneath. */
 
 type Flat = {
   src: string
   title: string
+  cn: string
   w: number
   h: number
-  folder: string
+  g: number
   at: number
 }
 
-const FLAT: Flat[] = EDITIONS.flatMap((g) =>
-  g.items.map((it, at) => ({ ...it, folder: g.folder, at })),
+const FLAT: Flat[] = EDITIONS.flatMap((g, gi) =>
+  g.items.map((it, at) => ({ ...it, g: gi, at })),
 )
 
-export default function EditionsSection() {
+function useLightbox() {
   const [open, setOpen] = useState<number | null>(null)
 
   const close = useCallback(() => setOpen(null), [])
@@ -37,7 +41,60 @@ export default function EditionsSection() {
     return () => window.removeEventListener('keydown', onKey)
   }, [open, close, step])
 
+  return { open, setOpen, close, step }
+}
+
+function Plate({
+  item,
+  index,
+  onOpen,
+  variant,
+}: {
+  item: Flat
+  index: number
+  onOpen: (i: number) => void
+  variant: string
+}) {
+  return (
+    <button
+      className={`ed__cell ed__cell--${variant}`}
+      style={{ aspectRatio: `${item.w} / ${item.h}` }}
+      onClick={() => onOpen(index)}
+      aria-label={`${item.title}${item.cn ? ` ${item.cn}` : ''}`}
+    >
+      <img
+        src={item.src}
+        width={item.w}
+        height={item.h}
+        loading="lazy"
+        decoding="async"
+        alt={`ANTRONI ${item.title}`}
+      />
+      <span className="ed__cap">
+        <b>{item.title}</b>
+        {item.cn && <i>{item.cn}</i>}
+      </span>
+      <span className="ed__zoom" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4">
+          <path d="M4 9V4h5M20 15v5h-5M20 9V4h-5M4 15v5h5" />
+        </svg>
+      </span>
+    </button>
+  )
+}
+
+export default function EditionsSection() {
+  const { open, setOpen, close, step } = useLightbox()
   const shown = open === null ? null : FLAT[open]
+  const group = shown ? EDITIONS[shown.g] : null
+  const stripRef = useRef<HTMLDivElement>(null)
+
+  /* keep the active thumbnail in view when stepping with the keyboard */
+  useEffect(() => {
+    if (open === null || !stripRef.current) return
+    const el = stripRef.current.querySelector('[data-on="true"]')
+    el?.scrollIntoView({ block: 'nearest', inline: 'center' })
+  }, [open])
 
   return (
     <section className="panel panel--editions">
@@ -45,20 +102,19 @@ export default function EditionsSection() {
         <p className="kicker">LES ÉDITIONS</p>
         <h2 className="panel__title">
           In Print
-          <em>印刷成品 · 五个版本</em>
+          <em>印刷成品 · 方向与版面</em>
         </h2>
         <p className="panel__lede">
-          The screen booklets were cut from the same drawings as the printed ones. These are the
-          printed editions themselves — covers, spreads and editorial grids, listed newest
-          volume first. Select any plate to read it full size.
+          Five aesthetic directions, then the plate sets they grew into — newest
+          volume first. Every plate opens full size.
         </p>
       </header>
 
-      {EDITIONS.map((g) => (
-        <section className="ed" key={g.folder}>
+      {EDITIONS.map((g, gi) => (
+        <section className={`ed ed--${g.layout}`} key={g.folder}>
           <header className="ed__head">
-            <span className="ed__n">{g.folder}</span>
-            <span className="ed__label">Edition {g.folder}</span>
+            <span className="ed__n">{g.label}</span>
+            {g.cn && <span className="ed__cn">{g.cn}</span>}
             <span className="ed__count">
               {g.items.length} {g.items.length === 1 ? 'plate' : 'plates'}
             </span>
@@ -66,34 +122,19 @@ export default function EditionsSection() {
 
           <div className="ed__grid">
             {g.items.map((it, at) => (
-                <button
-                  className="ed__cell"
-                  key={it.src}
-                  style={{ aspectRatio: `${it.w} / ${it.h}` }}
-                  onClick={() => {
-                    const i = FLAT.findIndex(
-                      (f) => f.folder === g.folder && f.at === at,
-                    )
-                    setOpen(i)
-                  }}
-                  aria-label={`Edition ${g.folder}, plate ${it.title}`}
-                >
-                  <img
-                    src={it.src}
-                    width={it.w}
-                    height={it.h}
-                    loading="lazy"
-                    decoding="async"
-                    alt={`ANTRONI printed edition ${g.folder}, plate ${it.title}`}
-                  />
-                  <span className="ed__cap">{it.title}</span>
-                </button>
+              <Plate
+                key={it.src}
+                item={{ ...it, g: gi, at }}
+                index={offsetOf(gi, at)}
+                onOpen={setOpen}
+                variant={g.layout}
+              />
             ))}
           </div>
         </section>
       ))}
 
-      {shown && (
+      {shown && group && (
         <div className="lightbox" role="dialog" aria-modal="true" onClick={close}>
           <button className="lightbox__x" onClick={close} aria-label="Close">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2">
@@ -115,14 +156,42 @@ export default function EditionsSection() {
           </button>
 
           <figure className="lightbox__fig" onClick={(e) => e.stopPropagation()}>
-            <img src={shown.src} width={shown.w} height={shown.h} alt={shown.title} />
+            <img
+              key={shown.src}
+              src={shown.src}
+              width={shown.w}
+              height={shown.h}
+              alt={shown.title}
+            />
             <figcaption className="lightbox__cap">
-              <span>Edition {shown.folder}</span>
+              <span>{group.label}</span>
               <b>{shown.title}</b>
+              {shown.cn && <em>{shown.cn}</em>}
               <i>
-                {String((open ?? 0) + 1).padStart(2, '0')} / {String(FLAT.length).padStart(2, '0')}
+                {String((open ?? 0) + 1).padStart(2, '0')} /{' '}
+                {String(FLAT.length).padStart(2, '0')}
               </i>
             </figcaption>
+
+            {/* the rest of this group, one click away */}
+            <div className="lightbox__strip" ref={stripRef} onClick={(e) => e.stopPropagation()}>
+              {group.items.map((it, at) => {
+                const idx = offsetOf(shown.g, at)
+                const on = idx === open
+                return (
+                  <button
+                    key={it.src}
+                    data-on={on}
+                    className={`lightbox__thumb${on ? ' is-on' : ''}`}
+                    style={{ aspectRatio: `${it.w} / ${it.h}` }}
+                    onClick={() => setOpen(idx)}
+                    aria-label={it.title}
+                  >
+                    <img src={it.src} width={it.w} height={it.h} alt="" />
+                  </button>
+                )
+              })}
+            </div>
           </figure>
 
           <button
@@ -141,4 +210,11 @@ export default function EditionsSection() {
       )}
     </section>
   )
+}
+
+/* flat index of the nth plate of group g */
+function offsetOf(g: number, at: number): number {
+  let n = 0
+  for (let i = 0; i < g; i++) n += EDITIONS[i].items.length
+  return n + at
 }
